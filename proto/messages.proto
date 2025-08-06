@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package gocsinterop;
+
+option go_package = "./;main";
+
+// 请求消息
+message ProcessRequest {
+  string input_text = 1;
+  double number_value = 2;
+  repeated string tags = 3;
+}
+
+// 响应消息
+message ProcessResponse {
+  repeated string result_strings = 1;
+  double calculated_value = 2;
+  bool success = 3;
+  string error_message = 4;
+  int64 timestamp = 5;
+}
+
+// 复杂的数据结构示例
+message UserInfo {
+  string name = 1;
+  int32 age = 2;
+  string email = 3;
+  repeated string interests = 4;
+}
+
+// 批处理请求
+message BatchRequest {
+  repeated ProcessRequest requests = 1;
+  UserInfo user_info = 2;
+}
+
+// 批处理响应
+message BatchResponse {
+  repeated ProcessResponse responses = 1;
+  int32 total_processed = 2;
+  double processing_time_ms = 3;
+}

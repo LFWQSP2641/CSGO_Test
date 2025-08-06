@@ -1,0 +1,8 @@
+go/*.dll
+go/*.pb.go
+go/*.h
+go/*.so
+go/*.a
+
+GoPInvokeDemo/bin
+GoPInvokeDemo/obj
