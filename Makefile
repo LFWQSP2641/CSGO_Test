@@ -14,37 +14,62 @@ GO_OUTPUT = add
 CS_OUTPUT = GoPInvokeDemo
 
 # 平台检测
-ifeq ($(OS),Windows_NT)
+# 使用更可靠的方法检测操作系统和shell环境
+DETECTED_OS := $(shell uname -s 2>/dev/null || echo Windows_NT)
+
+# 检测是否在Windows上但使用bash (如GitHub Actions)
+USING_BASH := $(shell echo $$BASH_VERSION 2>/dev/null)
+
+# Windows平台
+ifeq ($(DETECTED_OS),Windows_NT)
     PLATFORM = windows
     DLL_EXT = .dll
     EXE_EXT = .exe
-    RM = del /Q
-    MKDIR = mkdir
-    COPY = copy
-    MOVE = move
-    SEP = \\
+    # 如果检测到bash环境，使用Unix命令
+    ifneq ($(USING_BASH),)
+        RM = rm -f
+        MKDIR = mkdir -p
+        COPY = cp
+        MOVE = mv
+        SEP = /
+    else
+        # 原生Windows cmd环境
+        RM = del /Q
+        MKDIR = mkdir
+        COPY = copy
+        MOVE = move
+        SEP = \\
+    endif
+# Linux平台
+else ifeq ($(DETECTED_OS),Linux)
+    PLATFORM = linux
+    DLL_EXT = .so
+    EXE_EXT = 
+    RM = rm -f
+    MKDIR = mkdir -p
+    COPY = cp
+    MOVE = mv
+    SEP = /
+# macOS平台
+else ifeq ($(DETECTED_OS),Darwin)
+    PLATFORM = darwin
+    DLL_EXT = .dylib
+    EXE_EXT = 
+    RM = rm -f
+    MKDIR = mkdir -p
+    COPY = cp
+    MOVE = mv
+    SEP = /
+# 其他平台默认使用Unix命令
 else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-        PLATFORM = linux
-        DLL_EXT = .so
-        EXE_EXT = 
-        RM = rm -f
-        MKDIR = mkdir -p
-        COPY = cp
-        MOVE = mv
-        SEP = /
-    endif
-    ifeq ($(UNAME_S),Darwin)
-        PLATFORM = darwin
-        DLL_EXT = .dylib
-        EXE_EXT = 
-        RM = rm -f
-        MKDIR = mkdir -p
-        COPY = cp
-        MOVE = mv
-        SEP = /
-    endif
+    PLATFORM = $(DETECTED_OS)
+    DLL_EXT = .so
+    EXE_EXT = 
+    RM = rm -f
+    MKDIR = mkdir -p
+    COPY = cp
+    MOVE = mv
+    SEP = /
 endif
 
 # 路径配置
@@ -165,7 +190,7 @@ clean:
 # 测试目标
 test-debug: debug
 	@echo "运行 Debug 版本测试..."
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows_NT)
 	cd $(CS_OUTPUT_DIR_DEBUG) && $(CS_OUTPUT)$(EXE_EXT)
 else
 	cd $(CS_OUTPUT_DIR_DEBUG) && ./$(CS_OUTPUT)$(EXE_EXT)
@@ -173,7 +198,7 @@ endif
 
 test-release: release
 	@echo "运行 Release 版本测试..."
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows_NT)
 	cd $(CS_OUTPUT_DIR_RELEASE) && $(CS_OUTPUT)$(EXE_EXT)
 else
 	cd $(CS_OUTPUT_DIR_RELEASE) && ./$(CS_OUTPUT)$(EXE_EXT)
@@ -183,7 +208,7 @@ endif
 package-debug: debug
 	@echo "打包 Debug 版本..."
 	$(MKDIR) dist$(SEP)debug
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows_NT)
 	$(COPY) "$(CS_OUTPUT_DIR_DEBUG)$(SEP)*" "dist$(SEP)debug$(SEP)"
 else
 	$(COPY) $(CS_OUTPUT_DIR_DEBUG)/* dist/debug/
@@ -192,7 +217,7 @@ endif
 package-release: release
 	@echo "打包 Release 版本..."
 	$(MKDIR) dist$(SEP)release
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows_NT)
 	$(COPY) "$(CS_OUTPUT_DIR_RELEASE)$(SEP)*" "dist$(SEP)release$(SEP)"
 else
 	$(COPY) $(CS_OUTPUT_DIR_RELEASE)/* dist/release/

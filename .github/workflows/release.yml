@@ -96,29 +96,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  create-release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts/
-
-    - name: Create release archives
-      run: |
-        cd artifacts
-        for dir in */; do
-          platform=$(echo "$dir" | sed 's/gotest-\(.*\)-release\//\1/')
-          tar -czf "gotest-${platform}-release.tar.gz" -C "$dir" .
-        done
-
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v1
-      with:
-        files: artifacts/*.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
