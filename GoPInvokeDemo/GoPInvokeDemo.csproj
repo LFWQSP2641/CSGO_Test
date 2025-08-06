@@ -16,11 +16,4 @@
     <Protobuf Include="..\proto\messages.proto" GrpcServices="None" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="..\go\add.dll">
-      <Link>add.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

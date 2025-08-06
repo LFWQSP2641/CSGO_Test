@@ -53,15 +53,15 @@ GO_PROTO_OUT = $(GO_DIR)/messages.pb.go
 CS_PROTO_OUT = $(CS_DIR)/obj/Debug/net9.0/Messages.cs
 
 # Go 构建配置
-GO_SRC = $(GO_DIR)/add.go $(GO_PROTO_OUT)
-GO_OUTPUT_DEBUG = $(GO_DIR)/$(GO_OUTPUT)_debug$(DLL_EXT)
-GO_OUTPUT_RELEASE = $(GO_DIR)/$(GO_OUTPUT)$(DLL_EXT)
+GO_SRC = $(GO_DIR)$(SEP)add.go $(GO_PROTO_OUT)
+GO_OUTPUT_DEBUG = $(GO_DIR)$(SEP)$(GO_OUTPUT)_debug$(DLL_EXT)
+GO_OUTPUT_RELEASE = $(GO_DIR)$(SEP)$(GO_OUTPUT)$(DLL_EXT)
 
 # C# 构建配置
-CS_OUTPUT_DIR_DEBUG = $(CS_DIR)/bin/Debug/net9.0
-CS_OUTPUT_DIR_RELEASE = $(CS_DIR)/bin/Release/net9.0
-CS_EXE_DEBUG = $(CS_OUTPUT_DIR_DEBUG)/$(CS_OUTPUT)$(EXE_EXT)
-CS_EXE_RELEASE = $(CS_OUTPUT_DIR_RELEASE)/$(CS_OUTPUT)$(EXE_EXT)
+CS_OUTPUT_DIR_DEBUG = $(CS_DIR)$(SEP)bin$(SEP)Debug$(SEP)net9.0
+CS_OUTPUT_DIR_RELEASE = $(CS_DIR)$(SEP)bin$(SEP)Release$(SEP)net9.0
+CS_EXE_DEBUG = $(CS_OUTPUT_DIR_DEBUG)$(SEP)$(CS_OUTPUT)$(EXE_EXT)
+CS_EXE_RELEASE = $(CS_OUTPUT_DIR_RELEASE)$(SEP)$(CS_OUTPUT)$(EXE_EXT)
 
 # 默认目标
 .PHONY: all clean debug release proto go-debug go-release cs-debug cs-release install-deps help
@@ -137,6 +137,8 @@ cs-debug: proto $(CS_EXE_DEBUG)
 $(CS_EXE_DEBUG): $(GO_OUTPUT_DEBUG)
 	@echo "构建 C# Debug 版本..."
 	cd $(CS_DIR) && dotnet build --configuration Debug
+	@echo "复制 Go 库到 C# 输出目录..."
+	$(COPY) "$(GO_OUTPUT_DEBUG)" "$(CS_OUTPUT_DIR_DEBUG)$(SEP)$(GO_OUTPUT)$(DLL_EXT)"
 	@echo "C# Debug 构建完成: $(CS_EXE_DEBUG)"
 
 # C# Release 构建
@@ -145,6 +147,8 @@ cs-release: proto $(CS_EXE_RELEASE)
 $(CS_EXE_RELEASE): $(GO_OUTPUT_RELEASE)
 	@echo "构建 C# Release 版本..."
 	cd $(CS_DIR) && dotnet build --configuration Release
+	@echo "复制 Go 库到 C# 输出目录..."
+	$(COPY) "$(GO_OUTPUT_RELEASE)" "$(CS_OUTPUT_DIR_RELEASE)$(SEP)$(GO_OUTPUT)$(DLL_EXT)"
 	@echo "C# Release 构建完成: $(CS_EXE_RELEASE)"
 
 # 清理
@@ -153,17 +157,27 @@ clean:
 	-$(RM) $(GO_DIR)$(SEP)*$(DLL_EXT)
 	-$(RM) $(GO_DIR)$(SEP)*.h
 	-$(RM) $(GO_DIR)$(SEP)messages.pb.go
+	-$(RM) "$(CS_OUTPUT_DIR_DEBUG)$(SEP)$(GO_OUTPUT)$(DLL_EXT)"
+	-$(RM) "$(CS_OUTPUT_DIR_RELEASE)$(SEP)$(GO_OUTPUT)$(DLL_EXT)"
 	cd $(CS_DIR) && dotnet clean
 	@echo "清理完成"
 
 # 测试目标
 test-debug: debug
 	@echo "运行 Debug 版本测试..."
+ifeq ($(OS),Windows_NT)
+	cd $(CS_OUTPUT_DIR_DEBUG) && $(CS_OUTPUT)$(EXE_EXT)
+else
 	cd $(CS_OUTPUT_DIR_DEBUG) && ./$(CS_OUTPUT)$(EXE_EXT)
+endif
 
 test-release: release
 	@echo "运行 Release 版本测试..."
+ifeq ($(OS),Windows_NT)
+	cd $(CS_OUTPUT_DIR_RELEASE) && $(CS_OUTPUT)$(EXE_EXT)
+else
 	cd $(CS_OUTPUT_DIR_RELEASE) && ./$(CS_OUTPUT)$(EXE_EXT)
+endif
 
 # 打包
 package-debug: debug
